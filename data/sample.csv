@@ -1,0 +1,21 @@
+date,shift,bay,cell,product_family,test_station,fault_description,remedial_action,time_to_resolve_mins,category
+2026-06-01,Day,Bay 3,Cell 2,ProLine-X,EOL-1,Unit dead on power up blown fuse F3 on control board,Replaced F3 2A fuse on control board and retested,15,Electrical
+2026-06-01,Night,Bay 1,Cell 5,ProLine-X,EOL-2,No power to unit blown fuse F3,Replaced blown F3 fuse retested unit passed,12,Electrical
+2026-06-02,Day,Bay 2,Cell 1,ProLine-X,EOL-1,Unit tripping on start blown fuse suspected,Swapped F3 fuse for spare confirmed fix,18,Electrical
+2026-06-02,Afternoon,Bay 4,Cell 3,ProLine-Y,EOL-3,Board dead no power blown fuse F1,Replaced F1 fuse on power supply board,14,Electrical
+2026-06-03,Day,Bay 1,Cell 2,ProLine-X,SW-1,Firmware hangs on boot software frozen at splash screen,Reflashed firmware v4.2.1 and rebooted unit,25,Software
+2026-06-03,Night,Bay 3,Cell 4,ProLine-Y,SW-2,Unit unresponsive frozen software during self test,Power cycled and reflashed control software,30,Software
+2026-06-04,Day,Bay 2,Cell 1,ProLine-Y,SW-1,Touchscreen frozen software lockup on startup,Reinstalled firmware image reset config,28,Software
+2026-06-04,Afternoon,Bay 4,Cell 5,ProLine-X,SW-3,Software froze mid cycle no response to input,Reflashed firmware and cleared config cache,22,Software
+2026-06-05,Day,Bay 1,Cell 3,ProLine-Z,AUD-1,Sound fail on final test speaker output silent,Replaced faulty speaker module RTV to supplier,40,Audio
+2026-06-05,Night,Bay 2,Cell 2,ProLine-Z,AUD-2,Audio test failed sound fail distorted output,Swapped audio driver board RTV faulty part,35,Audio
+2026-06-06,Day,Bay 3,Cell 4,ProLine-Z,AUD-1,Sound fail no audio output on test station,Replaced speaker assembly logged RTV,38,Audio
+2026-06-06,Afternoon,Bay 1,Cell 1,ProLine-Z,AUD-3,Sound fail crackling audio intermittent,Replaced audio module sent RTV to vendor,32,Audio
+2026-06-07,Day,Bay 2,Cell 3,ProLine-X,EOL-2,Conveyor jam on infeed damaged product guide,Cleared jam and straightened bent guide rail,20,Mechanical
+2026-06-07,Night,Bay 4,Cell 2,ProLine-Y,EOL-1,Sensor misaligned causing false reject,Realigned proximity sensor and recalibrated,16,Mechanical
+2026-06-08,Day,Bay 3,Cell 5,ProLine-Z,EOL-3,Line changeover to new product variant,Changeover performed per changeover checklist,45,Changeover
+2026-06-08,Afternoon,Bay 1,Cell 4,ProLine-X,SW-2,Operator loaded wrong test profile,Corrected test profile selection retrained operator,10,Operator Error
+2026-06-09,Day,Bay 2,Cell 1,ProLine-Y,EOL-2,Unit flagged fail but retest passed no fault found,Retested unit twice no fault found released to stock,8,No fault found
+2026-06-09,Night,Bay 4,Cell 3,ProLine-Z,AUD-2,Scheduled preventative maintenance on audio rig,Performed scheduled preventative maintenance per PM plan,60,Preventative Maintenance
+2026-06-10,Day,Bay 3,Cell 2,ProLine-X,EOL-1,Call out raised but line already restarted by shift lead,Call out cancelled no attendance required,5,Call out cancelled
+2026-06-10,Afternoon,Bay 1,Cell 5,ProLine-Y,SW-1,Unit frozen software unresponsive after update,Rolled back firmware to previous stable version,27,Software

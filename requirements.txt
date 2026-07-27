@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+pandas
+openpyxl
+psycopg[binary]
+pgvector
+sentence-transformers
+python-dotenv
+requests

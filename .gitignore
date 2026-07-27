@@ -1,0 +1,41 @@
+# Environment / secrets
+.env
+
+# Data
+data/raw/*
+!data/raw/.gitkeep
+data/**/*.xlsx
+data/**/*.xls
+data/**/*.csv
+!data/sample.csv
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Caches
+.cache/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.log
+
+# Editors / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Model artifacts
+models/
+*.gguf
+
+# Ad-hoc screenshots
+Screenshot *.png

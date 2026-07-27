@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Knowledge Box</title>
+<style>
+  :root {
+    --bg: #f5f6f8;
+    --card: #ffffff;
+    --border: #dfe2e7;
+    --text: #1b1f24;
+    --text-secondary: #5b6270;
+    --accent: #185fa5;
+    --accent-bg: #e6f1fb;
+    --error: #a32d2d;
+    --error-bg: #fcebeb;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    margin: 0;
+    padding: 40px 20px;
+  }
+  .container { max-width: 760px; margin: 0 auto; }
+  h1 { font-size: 22px; font-weight: 600; margin: 0 0 4px; }
+  .subtitle { color: var(--text-secondary); font-size: 14px; margin: 0 0 28px; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+  label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+  textarea, input {
+    width: 100%;
+    font-size: 14px;
+    font-family: inherit;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    margin-bottom: 16px;
+    resize: vertical;
+  }
+  textarea { min-height: 70px; }
+  .row { display: flex; gap: 16px; }
+  .row > div { flex: 1; }
+  details { margin-bottom: 16px; }
+  summary { font-size: 13px; color: var(--text-secondary); cursor: pointer; margin-bottom: 12px; }
+  button {
+    background: var(--accent);
+    color: white;
+    border: none;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  button:disabled { opacity: 0.6; cursor: not-allowed; }
+  .status { font-size: 13px; color: var(--text-secondary); margin-top: 12px; }
+  .error { background: var(--error-bg); color: var(--error); padding: 12px 16px; border-radius: 6px; font-size: 14px; }
+  .suggestion {
+    background: var(--accent-bg);
+    border-radius: 8px;
+    padding: 16px 18px;
+    font-size: 15px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+  }
+  .case {
+    border-bottom: 1px solid var(--border);
+    padding: 14px 0;
+  }
+  .case:last-child { border-bottom: none; }
+  .case-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 4px;
+  }
+  .case-fault { font-weight: 600; font-size: 14px; }
+  .case-match { font-size: 12px; color: var(--accent); white-space: nowrap; }
+  .case-fix { font-size: 14px; color: var(--text); margin-bottom: 4px; }
+  .case-meta { font-size: 12px; color: var(--text-secondary); }
+  h2 { font-size: 15px; font-weight: 600; margin: 0 0 12px; }
+  #results { display: none; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Knowledge Box</h1>
+  <p class="subtitle">Describe a fault to get a suggested remedial action, grounded in historical call-outs.</p>
+
+  <div class="card">
+    <form id="suggest-form">
+      <label for="fault_description">Fault description</label>
+      <textarea id="fault_description" required placeholder="e.g. Unit will not power on, seems to have a blown fuse"></textarea>
+
+      <details>
+        <summary>Optional context</summary>
+        <div class="row">
+          <div>
+            <label for="product_family">Product family</label>
+            <input id="product_family" type="text" placeholder="optional">
+          </div>
+          <div>
+            <label for="test_station">Test station</label>
+            <input id="test_station" type="text" placeholder="optional">
+          </div>
+          <div style="flex: 0 0 100px;">
+            <label for="top_k">Results</label>
+            <input id="top_k" type="number" value="5" min="1" max="20">
+          </div>
+        </div>
+      </details>
+
+      <button type="submit" id="submit-btn">Get suggestion</button>
+      <div class="status" id="status"></div>
+    </form>
+  </div>
+
+  <div id="results">
+    <div class="card">
+      <h2>Suggested remedial action</h2>
+      <div class="suggestion" id="suggested-action"></div>
+    </div>
+    <div class="card">
+      <h2>Supporting historical cases</h2>
+      <div id="cases"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const form = document.getElementById('suggest-form');
+const statusEl = document.getElementById('status');
+const submitBtn = document.getElementById('submit-btn');
+const results = document.getElementById('results');
+const suggestedActionEl = document.getElementById('suggested-action');
+const casesEl = document.getElementById('cases');
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str ?? '';
+  return div.innerHTML;
+}
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const faultDescription = document.getElementById('fault_description').value.trim();
+  if (!faultDescription) return;
+
+  const body = {
+    fault_description: faultDescription,
+    top_k: parseInt(document.getElementById('top_k').value, 10) || 5,
+  };
+  const productFamily = document.getElementById('product_family').value.trim();
+  const testStation = document.getElementById('test_station').value.trim();
+  if (productFamily) body.product_family = productFamily;
+  if (testStation) body.test_station = testStation;
+
+  submitBtn.disabled = true;
+  results.style.display = 'none';
+  statusEl.textContent = 'Searching historical faults and asking the model...';
+
+  try {
+    const resp = await fetch('/suggest', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    const data = await resp.json();
+
+    if (!resp.ok) {
+      statusEl.innerHTML = `<div class="error">${escapeHtml(data.detail || 'Request failed.')}</div>`;
+      return;
+    }
+
+    statusEl.textContent = '';
+    suggestedActionEl.textContent = data.suggested_action;
+
+    casesEl.innerHTML = '';
+    for (const c of data.supporting_cases) {
+      const match = Math.max(0, Math.round((1 - c.distance) * 100));
+      const meta = [c.category, c.product_family, c.test_station]
+        .filter(Boolean)
+        .join(' · ');
+
+      const el = document.createElement('div');
+      el.className = 'case';
+      el.innerHTML = `
+        <div class="case-header">
+          <span class="case-fault">${escapeHtml(c.fault_description)}</span>
+          <span class="case-match">${match}% match</span>
+        </div>
+        <div class="case-fix">${escapeHtml(c.remedial_action)}</div>
+        <div class="case-meta">${escapeHtml(meta || '—')}</div>
+      `;
+      casesEl.appendChild(el);
+    }
+
+    results.style.display = 'block';
+  } catch (err) {
+    statusEl.innerHTML = `<div class="error">Could not reach the API: ${escapeHtml(err.message)}</div>`;
+  } finally {
+    submitBtn.disabled = false;
+  }
+});
+</script>
+</body>
+</html>
