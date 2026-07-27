@@ -6,6 +6,8 @@ suggesting remedial actions to maintenance call-outs in Ei Electronics.**
 Author: Darren Heffernan
 Date: 27 July 2026
 
+Repository: [https://github.com/darren-heffernan/CapstoneProject](https://github.com/darren-heffernan/CapstoneProject)
+
 ---
 
 ## 1. Abstract
