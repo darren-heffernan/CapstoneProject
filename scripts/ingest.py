@@ -7,8 +7,7 @@ Intended behaviour:
 2. Clean the data: normalise column names, parse dates, drop rows with missing
    ``fault_description`` or ``remedial_action``.
 3. Filter out non-fault categories at index time (Changeover, Operator Error,
-   No fault found, Preventative Maintenance, Call out cancelled) â€” see
-   docs/decisions.md.
+   No fault found, Preventative Maintenance, Call out cancelled) — see docs/decisions.md.
 4. Embed each row's fault description via the shared embedding wrapper
    (single choke point so the model can later be swapped for a fine-tuned
    one without touching call sites).
@@ -16,8 +15,7 @@ Intended behaviour:
    embeddings into Postgres, connecting via the ``POSTGRES_*`` settings in
    ``.env``.
 
-Run directly: ``python scripts/ingest.py``. Idempotent â€” re-running should
-rebuild the index from source without requiring a fresh database.
+Run directly: ``python scripts/ingest.py``. Idempotent — re-running should rebuild the index from source without requiring a fresh database.
 """
 
 from __future__ import annotations
@@ -39,7 +37,6 @@ from pgvector.psycopg import register_vector
 # not the repo root, is what Python puts on sys.path in that case).
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from app.db import connect  # noqa: E402
 from app.embeddings import EMBEDDING_DIM, embed_texts  # noqa: E402
 
 load_dotenv()
@@ -58,9 +55,6 @@ NON_FAULT_CATEGORIES = {
     "call out cancelled",
 }
 
-# Real-world exports use inconsistent header wording (e.g. "Product" instead of
-# "Product Family", "Call out Fault \ Description" instead of "Fault Description")
-# that punctuation-stripping alone can't resolve; map those explicitly.
 COLUMN_ALIASES = {
     "product": "product_family",
     "call_out_fault_description": "fault_description",
@@ -178,6 +172,16 @@ def _row_values(record: dict) -> tuple:
     )
 
 
+def _connect() -> psycopg.Connection:
+    return psycopg.connect(
+        host=os.getenv("POSTGRES_HOST", "localhost"),
+        port=os.getenv("POSTGRES_PORT", "5432"),
+        user=os.getenv("POSTGRES_USER", "kbox"),
+        password=os.getenv("POSTGRES_PASSWORD", "kbox"),
+        dbname=os.getenv("POSTGRES_DB", "knowledgebox"),
+    )
+
+
 def _ensure_schema(conn: psycopg.Connection) -> None:
     with conn.cursor() as cur:
         cur.execute("CREATE EXTENSION IF NOT EXISTS vector")
@@ -199,6 +203,20 @@ def _ensure_schema(conn: psycopg.Connection) -> None:
             )
             """
         )
+        cur.execute(
+            """
+            SELECT atttypmod FROM pg_attribute
+            WHERE attrelid = 'maintenance_records'::regclass AND attname = 'embedding'
+            """
+        )
+        existing_dim = cur.fetchone()[0]
+        if existing_dim != EMBEDDING_DIM:
+            raise ValueError(
+                f"Existing maintenance_records.embedding column has dimension "
+                f"{existing_dim}, but EMBEDDING_DIM={EMBEDDING_DIM}. Align "
+                f"EMBEDDING_DIM with the schema (or drop the table to rebuild) "
+                f"before re-ingesting."
+            )
         cur.execute(
             """
             CREATE INDEX IF NOT EXISTS maintenance_records_embedding_idx

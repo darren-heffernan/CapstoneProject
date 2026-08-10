@@ -14,7 +14,6 @@ Intended behaviour:
    locally-served Ollama model (``OLLAMA_HOST`` / ``OLLAMA_MODEL``) to
    synthesise a suggested remedial action.
 5. Return the suggested action along with the supporting historical rows.
-
 """
 
 from __future__ import annotations
@@ -31,9 +30,8 @@ from fastapi import Depends, FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from pgvector.psycopg import register_vector
 from psycopg.rows import DictRow, dict_row
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
-from app.db import connect
 from app.embeddings import embed_text
 
 load_dotenv()
@@ -41,6 +39,17 @@ load_dotenv()
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434").rstrip("/")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.1:8b")
 OLLAMA_TIMEOUT_SECONDS = 300
+
+
+def _load_max_distance() -> float | None:
+    """Optional weak-match guard. If ``KBOX_MAX_DISTANCE`` is set and the nearest
+    retrieved case is farther than it, the suggestion is flagged low-confidence
+    (see docs/report.md §9.2)."""
+    raw = os.getenv("KBOX_MAX_DISTANCE", "").strip()
+    return float(raw) if raw else None
+
+
+MAX_DISTANCE = _load_max_distance()
 
 
 @asynccontextmanager
@@ -61,10 +70,20 @@ app = FastAPI(title="Knowledge Box", lifespan=lifespan)
 
 
 class SuggestRequest(BaseModel):
-    fault_description: str
+    fault_description: str = Field(min_length=1, max_length=2000)
     product_family: str | None = None
     test_station: str | None = None
     top_k: int = Field(default=5, ge=1, le=20)
+
+    @field_validator("fault_description")
+    @classmethod
+    def _strip_and_require_content(cls, value: str) -> str:
+        # A type-only check would let through whitespace-only strings; strip and
+        # reject those so we never embed an effectively empty query.
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError("fault_description must not be empty or whitespace only")
+        return stripped
 
 
 class RetrievedCase(BaseModel):
@@ -81,11 +100,24 @@ class RetrievedCase(BaseModel):
 class SuggestResponse(BaseModel):
     suggested_action: str
     supporting_cases: list[RetrievedCase]
+    low_confidence: bool = False
+    confidence_note: str | None = None
+
+
+def _connect() -> psycopg.Connection:
+    conn = psycopg.connect(
+        host=os.getenv("POSTGRES_HOST", "localhost"),
+        port=os.getenv("POSTGRES_PORT", "5432"),
+        user=os.getenv("POSTGRES_USER", "kbox"),
+        password=os.getenv("POSTGRES_PASSWORD", "kbox"),
+        dbname=os.getenv("POSTGRES_DB", "knowledgebox"),
+    )
+    register_vector(conn)
+    return conn
 
 
 def get_db() -> Iterator[psycopg.Connection]:
-    conn = connect()
-    register_vector(conn)
+    conn = _connect()
     try:
         yield conn
     finally:
@@ -144,7 +176,21 @@ def _generate_suggestion(prompt: str) -> str:
         raise HTTPException(
             status_code=502, detail=f"Could not reach Ollama at {OLLAMA_HOST}: {exc}"
         ) from exc
-    return response.json()["response"].strip()
+
+    # Don't assume the body is valid JSON.
+    try:
+        payload = response.json()
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=502, detail="Ollama returned a non-JSON response"
+        ) from exc
+    suggestion = payload.get("response")
+    if not isinstance(suggestion, str):
+        raise HTTPException(
+            status_code=502,
+            detail="Ollama response did not contain a 'response' field",
+        )
+    return suggestion.strip()
 
 
 @app.post("/suggest", response_model=SuggestResponse)
@@ -163,9 +209,22 @@ def suggest(
     prompt = _build_prompt(request, cases)
     suggested_action = _generate_suggestion(prompt)
 
+    # cases are ordered by ascending distance, so the first is the nearest.
+    nearest_distance = cases[0]["distance"]
+    low_confidence = MAX_DISTANCE is not None and nearest_distance > MAX_DISTANCE
+    confidence_note = (
+        f"Nearest historical case is at cosine distance {nearest_distance:.3f}, "
+        f"beyond the configured threshold ({MAX_DISTANCE}); no closely similar "
+        f"history was found, so this suggestion is weakly grounded."
+        if low_confidence
+        else None
+    )
+
     return SuggestResponse(
         suggested_action=suggested_action,
         supporting_cases=[RetrievedCase(**case) for case in cases],
+        low_confidence=low_confidence,
+        confidence_note=confidence_note,
     )
 
 

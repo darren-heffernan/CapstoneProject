@@ -1,3 +1,4 @@
 # Dev/test dependencies (in addition to requirements.txt).
 -r requirements.txt
 pytest
+httpx  # required by fastapi.testclient.TestClient

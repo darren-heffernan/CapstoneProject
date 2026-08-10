@@ -1,0 +1,49 @@
+{
+  "queries": [
+    {
+      "query": "light curtain on the cell keeps tripping and halting the line",
+      "category": "Mechanical Failure",
+      "relevant_any_keywords": ["curtain", "light curtain"]
+    },
+    {
+      "query": "pallet not loading into the fixture on the automation cell",
+      "category": "Mechanical Failure",
+      "relevant_any_keywords": ["pallet", "loading"]
+    },
+    {
+      "query": "PLC alarm on power up and the station will not start",
+      "category": "Comms. issue",
+      "relevant_any_keywords": ["plc", "power up", "start"]
+    },
+    {
+      "query": "unit will not enter test mode when connected to the fixture",
+      "category": "Comms. issue",
+      "relevant_any_keywords": ["testmode", "test mode", "fixture"]
+    },
+    {
+      "query": "IRLED failing during test on side 1",
+      "category": "Contact problem",
+      "relevant_any_keywords": ["irled", "led", "uart"]
+    },
+    {
+      "query": "battery contact intermittently failing at the test pins",
+      "category": "Debris/Contamination on pins",
+      "relevant_any_keywords": ["battery", "contact", "pins"]
+    },
+    {
+      "query": "unit display frozen and the station appears to have locked up",
+      "category": "Electronic equipment failure",
+      "relevant_any_keywords": ["frozen", "display", "down"]
+    },
+    {
+      "query": "error message on screen during the software test step",
+      "category": "Software issue",
+      "relevant_any_keywords": ["error", "screen", "button"]
+    },
+    {
+      "query": "test position reading high and failing calibration",
+      "category": "Calibration",
+      "relevant_any_keywords": ["position", "high", "fail"]
+    }
+  ]
+}

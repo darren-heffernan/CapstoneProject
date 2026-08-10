@@ -36,6 +36,3 @@ Thumbs.db
 # Model artifacts
 models/
 *.gguf
-
-# Ad-hoc screenshots
-Screenshot *.png

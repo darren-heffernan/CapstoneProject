@@ -1,6 +1,7 @@
 """Shared embedding wrapper.
 
-Turns text into vectors. Used by both ``scripts/ingest.py`` (index-time) and ``app/main.py`` (query-time) so the two stay consistent
+Single choke point for turning text into vectors. Used by both
+``scripts/ingest.py`` (index-time) and ``app/main.py`` (query-time).
 """
 
 from __future__ import annotations
@@ -22,7 +23,11 @@ def _get_model() -> SentenceTransformer:
     global _model
     if _model is None:
         model = SentenceTransformer(EMBEDDING_MODEL)
-        actual_dim = model.get_embedding_dimension()
+        # ``get_sentence_embedding_dimension`` was renamed to
+        # ``get_embedding_dimension`` in newer sentence-transformers; prefer the
+        # new name and fall back so we work across versions without warnings.
+        get_dim = getattr(model, "get_embedding_dimension", None) or model.get_sentence_embedding_dimension
+        actual_dim = get_dim()
         if actual_dim != EMBEDDING_DIM:
             raise ValueError(
                 f"EMBEDDING_DIM={EMBEDDING_DIM} does not match "

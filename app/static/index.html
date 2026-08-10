@@ -184,6 +184,9 @@ form.addEventListener('submit', async (e) => {
     }
 
     statusEl.textContent = '';
+    if (data.low_confidence) {
+      statusEl.innerHTML = `<div class="error">⚠ ${escapeHtml(data.confidence_note || 'No closely similar history was found; treat this suggestion with caution.')}</div>`;
+    }
     suggestedActionEl.textContent = data.suggested_action;
 
     casesEl.innerHTML = '';
@@ -198,7 +201,7 @@ form.addEventListener('submit', async (e) => {
       el.innerHTML = `
         <div class="case-header">
           <span class="case-fault">${escapeHtml(c.fault_description)}</span>
-          <span class="case-match">${match}% match</span>
+          <span class="case-match" title="Cosine similarity between your fault text and this historical record">${match}% similarity</span>
         </div>
         <div class="case-fix">${escapeHtml(c.remedial_action)}</div>
         <div class="case-meta">${escapeHtml(meta || '—')}</div>
