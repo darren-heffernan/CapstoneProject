@@ -7,7 +7,7 @@ Intended behaviour:
 2. Clean the data: normalise column names, parse dates, drop rows with missing
    ``fault_description`` or ``remedial_action``.
 3. Filter out non-fault categories at index time (Changeover, Operator Error,
-   No fault found, Preventative Maintenance, Call out cancelled) — see docs/decisions.md.
+   No fault found, Preventative Maintenance, Call out cancelled) â€” see docs/decisions.md.
 4. Embed each row's fault description via the shared embedding wrapper
    (single choke point so the model can later be swapped for a fine-tuned
    one without touching call sites).
@@ -15,7 +15,7 @@ Intended behaviour:
    embeddings into Postgres, connecting via the ``POSTGRES_*`` settings in
    ``.env``.
 
-Run directly: ``python scripts/ingest.py``. Idempotent — re-running should rebuild the index from source without requiring a fresh database.
+Run directly: ``python scripts/ingest.py``. Idempotent â€” re-running should rebuild the index from source without requiring a fresh database.
 """
 
 from __future__ import annotations
@@ -269,7 +269,7 @@ def main() -> None:
     logger.info("Embedding %d fault descriptions...", len(df))
     embeddings = embed_texts(df["fault_description"].tolist())
 
-    conn = connect()
+    conn = _connect()
     try:
         _ensure_schema(conn)
         _upsert(conn, df, embeddings)

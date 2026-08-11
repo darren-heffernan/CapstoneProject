@@ -12,6 +12,8 @@ Given a fault description, it retrieves similar historical faults (via pgvector 
 
 ## Quick start
 
+**Prerequisites:** Docker Desktop (running), Python 3.11+. See [docs/setup.md](docs/setup.md) for details.
+
 1. Start the backing services (Postgres/pgvector + Ollama):
 
    ```bash
@@ -23,7 +25,7 @@ Given a fault description, it retrieves similar historical faults (via pgvector 
    ```bash
    cp .env.example .env
    python -m venv .venv
-   source .venv/bin/activate   # or .venv\Scripts\activate on Windows
+   source .venv/bin/activate   # or .venv/Scripts/activate on Windows
    pip install -r requirements.txt
    ```
 
